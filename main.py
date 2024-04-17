@@ -190,7 +190,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--logdir", default=None, type=str, help="directory to save the tensorboard logs")
     parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint") 
-    parser.add_argument("--pretrained_dir", default=None, type=str, help="pretrained checkpoint directory") 
+    parser.add_argument("--pretrained_dir", default='./ckpt/multimodal', type=str, help="pretrained checkpoint directory") 
     parser.add_argument("--data_dir", default=None, type=str, help="dataset directory")
     parser.add_argument("--report_dir", default=None, type=str, help="dataset directory") 
     parser.add_argument("--pretrained_model_name", default="model_best.pt", type=str, help="pretrained model name")
@@ -242,7 +242,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_ssl_pretrained", default=False, help="use self-supervised pretrained weights")
     parser.add_argument("--spatial_dims", default=3, type=int, help="spatial dimension of input data")
     parser.add_argument("--squared_dice", action="store_true", help="use squared Dice")
-    parser.add_argument("--test_mode", default=0, type=int)
+    parser.add_argument("--test_mode", default=2, type=int)
     parser.add_argument("--flag", default="plan_form", type=str) 
     parser.add_argument("--save_interval", default=1000, type=int)
 
@@ -251,8 +251,9 @@ if __name__ == "__main__":
     parser.add_argument("--p_data", default=1.0, type=float, help="portion of dataset")
     
     # multimodal
-    parser.add_argument("--context", default=False, type=bool)
+    parser.add_argument("--context", default=True, type=bool)
     parser.add_argument("--textencoder", default="llama2", type=str)
+    parser.add_argument("--llama_rep", default="./model/llama2/Llama-2-7b-chat-hf", type=str)
     parser.add_argument("--align_score", default=0, type=int)
     parser.add_argument("--context_length", default=8, type=int)
     parser.add_argument("--n_prompts", default=2, type=int)

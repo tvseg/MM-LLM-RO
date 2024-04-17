@@ -26,6 +26,7 @@ from transformers import LlamaTokenizer
 from .modules import ContextUnetrUpBlock, UnetOutUpBlock
 from .sam import TwoWayTransformer
 from .text_encoder import tokenize, TextContextEncoder
+from .llama2.llama_custom import LlamaForCausalLM
 
 
 # LLMSeg
@@ -96,8 +97,7 @@ class ContextUNETR(nn.Module):
 
         if not (0 <= dropout_path_rate <= 1):
             raise ValueError("drop path rate should be between 0 and 1.")
-
-        self.stage = args.stage
+        
         self.context = context
         self.normalize = normalize
 
@@ -184,7 +184,7 @@ class ContextUNETR(nn.Module):
             self.attn_transformer = nn.Sequential(*attntrans)
             
             # clip text encoder
-            self.text_encoder = TextContextEncoder(embed_dim=self.txt_embed_dim, noise=args.noise, alpha=args.alpha)
+            self.text_encoder = TextContextEncoder(embed_dim=self.txt_embed_dim)
             self.context_length = args.context_length
             self.token_embed_dim = self.text_encoder.text_projection.shape[-1]
             self.contexts = nn.Parameter(torch.randn(args.n_prompts, self.context_length, self.token_embed_dim))
@@ -196,30 +196,37 @@ class ContextUNETR(nn.Module):
             if args.textencoder.find('llama') >= 0:
                 self.text_encoder.llm = True
                 if args.textencoder == 'llama2':
-                    rep_llama = './llama2/Llama-2-7b-chat-hf'
-                elif args.textencoder == 'llama2_13b':
-                    rep_llama = './llama2/Llama-2-13b-chat-hf'
+                    rep_llama = args.llama_rep
                 self.tokenizer = LlamaTokenizer.from_pretrained(rep_llama)
                 self.max_length = 128 
 
+                self.text_encoder.transformer  = LlamaForCausalLM.from_pretrained(
+                        rep_llama,
+                        # load_in_8bit=True, # Add this for using int8
+                        torch_dtype=torch.float16,
+                        device_map="cpu", #args.gpu "cpu"
+                    ).model
+                    
+                self.tokenizer._add_tokens(["<SEG>"], special_tokens=True)
+                self.text_encoder.transformer.resize_token_embeddings(len(self.tokenizer) + 1)
+                self.text_encoder.token_embedding = self.text_encoder.transformer.embed_tokens
+                
+                for name, param in self.text_encoder.transformer.named_parameters():
+                    param.requires_grad_(False)
+                    
         
     def load_from(self, weights):
         pass
 
-    def interactive_alignment(self, hidden_states_out, report_in, report_ret, x_in, status_train):
+    def interactive_alignment(self, hidden_states_out, report_in, x_in):
         
         tok_txt = []
         emb_txt = []
         emb_txt_t = []
             
         # prepare text tokens
-        if self.text_encoder.llm:
-            tok_txt = report_in
-        else:
-            for report in report_in:
-                tok_txt_= tokenize(report, self.max_length-self.context_length)
-                tok_txt.append(tok_txt_)
-            tok_txt = torch.stack(tok_txt, dim=0)
+        tok_txt = report_in
+        emb_txt = self.text_encoder(tok_txt.to(x_in.device), self.contexts) 
 
         # projection
         report_l = []
@@ -262,7 +269,7 @@ class ContextUNETR(nn.Module):
         hidden_states_out.append(dec4)
 
         # multimodal alignment
-        hidden_states_out, _, _ = self.interactive_alignment(hidden_states_out, report_in, retrieved_reports, x_in, status_train = target is not None)
+        hidden_states_out, _, _ = self.interactive_alignment(hidden_states_out, report_in, x_in)
 
         # visual decoder
         dec2 = self.decoder4(hidden_states_out[4], hidden_states_out[3])

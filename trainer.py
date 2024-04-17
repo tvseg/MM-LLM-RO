@@ -36,8 +36,6 @@ def test_model(model, test_loader, args):
         
     pretrained_pth = os.path.join(args.pretrained_dir, args.pretrained_model_name)
     model_dict = torch.load(pretrained_pth, map_location='cpu')["state_dict"]
-    if args.lora:
-        set_peft_model_state_dict(model.text_encoder, model_dict)
     model.load_state_dict(model_dict, strict=False)
     model.eval()
     model.to(args.gpu)

@@ -138,9 +138,6 @@ class SimpleTokenizer(object):
         return text
 
 
-_tokenizer = SimpleTokenizer(bpe_path='./clip/bpe_simple_vocab_16e6.txt.gz')
-
-
 def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: bool = False) -> torch.LongTensor: #128 77
     """
     Returns the tokenized representation of given input string(s)
@@ -158,6 +155,9 @@ def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: b
     """
     if isinstance(texts, str):
         texts = [texts]
+
+    
+    _tokenizer = SimpleTokenizer(bpe_path='./clip/bpe_simple_vocab_16e6.txt.gz')
 
     sot_token = _tokenizer.encoder["<|startoftext|>"]
     eot_token = _tokenizer.encoder["<|endoftext|>"]

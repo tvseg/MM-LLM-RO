@@ -246,16 +246,9 @@ def get_loader(args, retriever=None):
             data=datalist, transform=train_transform, cache_num=24, cache_rate=1.0, num_workers=args.workers
         )
     train_sampler = Sampler(train_ds) if args.distributed else None
-    train_loader = data.DataLoader(
-        train_ds,
-        batch_size=args.batch_size,
-        shuffle=(train_sampler is None),
-        num_workers=args.workers,
-        sampler=train_sampler,
-        pin_memory=True,
-    )
     
     if args.test_mode:
+        train_loader = None
         test_ds = custom_data.Dataset(data=val_files, transform=test_transform, report=report) 
         test_sampler = Sampler(test_ds, shuffle=False) if args.distributed else None
         test_loader = data.DataLoader(
@@ -270,6 +263,15 @@ def get_loader(args, retriever=None):
         loader = [train_loader, test_loader]
     
     else:
+        train_loader = data.DataLoader(
+            train_ds,
+            batch_size=args.batch_size,
+            shuffle=(train_sampler is None),
+            num_workers=args.workers,
+            sampler=train_sampler,
+            pin_memory=True,
+        )
+
         val_ds = custom_data.Dataset(data=val_files, transform=val_transform, report=report) 
         val_sampler = Sampler(val_ds, shuffle=False) if args.distributed else None
         val_loader = data.DataLoader(
@@ -310,9 +312,41 @@ def build_prompt(df, args):
 
 def prepare_report(args, row, i=0):
 
-    age = row['Age'].values[i]
-    note = row['Clinical Note'].values[i]
-    text_input = 'Age: %s, %s'%(str(age), str(note))
+    t_stage = 'c' + str(row['icT'].values[i]) 
+    n_stage = '' + str(row['icN'].values[i]) 
 
-    return text_input
+    if n_stage == 'nan':
+        print(row['icN'].values[i])
+        n_stage == 'unknown'
+    if t_stage == 'cnan':
+        t_stage == 'unknown'
+    t_stage = t_stage.replace(' or ', '/').replace(' ', '')
     
+    if n_stage.find('2023') >= 0:
+        time = n_stage.split('-')
+        n_stage = 'N' + str(int(time[1])) + '/' + str(int(time[2].split(' ')[0])) 
+
+    subsite = row['Subsite 1'].values[i]
+    if 'Right' in subsite or 'right' in subsite or 'Rt' in subsite:
+        orientation = 'right'
+    elif 'Left' in subsite or 'left' in subsite or 'Lt' in subsite:
+        orientation = 'left'
+    elif 'Both' in subsite or 'both' in subsite:
+        orientation = 'both'
+        return None
+    else:
+        orientation = 'unknown' 
+
+    remark = row['Remark'].values[i]
+    if 'BCS' in remark:
+        surgery = 'breast conserving surgery'
+    elif 'Postop' in remark:
+        surgery = 'total mastectomy surgery'
+    else:
+        surgery = 'unknown type surgery'
+
+    text_prompt = ', '.join([n_stage, t_stage, surgery, orientation + ' side'])
+    print(text_prompt)
+
+    return text_prompt
+
