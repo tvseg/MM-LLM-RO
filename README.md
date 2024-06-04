@@ -1,5 +1,5 @@
 # Official source code for LLMSeg: LLM-driven Multimodal Target Volume Contouring in Radiation Oncology
-
+![LLMSeg](https://drive.google.com/uc?id=1wg51pfVJKF-pIpkTs8pB5WYq8l-L15Y)
 
 ## 1. Environment setting
 ```
