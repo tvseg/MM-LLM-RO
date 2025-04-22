@@ -19,7 +19,7 @@ cd ..
 ```
 cd model/llama2
 git lfs install
-git clone https://huggingface.co/meta-llama/Llama-2-7b-hf
+git clone https://huggingface.co/meta-llama/Llama-2-7b-chat-hf
 cd ..
 cd ckpt/multimodal
 download model_best.pt from https://1drv.ms/u/s!AhwNodepZ41oi5cpB9lo5U5CbXJz1A?e=tsfaHr
