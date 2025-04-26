@@ -312,8 +312,8 @@ def build_prompt(df, args):
 
 def prepare_report(args, row, i=0):
 
-    t_stage = 'c' + str(row['icT'].values[i]) 
-    n_stage = '' + str(row['icN'].values[i]) 
+    t_stage = 'cT' + str(row['icT'].values[i]).replace('T','')
+    n_stage = 'N' + str(row['icN'].values[i]).replace('N','')
 
     if n_stage == 'nan':
         print(row['icN'].values[i])
@@ -340,7 +340,7 @@ def prepare_report(args, row, i=0):
     remark = row['Remark'].values[i]
     if 'BCS' in remark:
         surgery = 'breast conserving surgery'
-    elif 'Postop' in remark:
+    elif ('Postop' in remark) | ('mastectomy' in remark):
         surgery = 'total mastectomy surgery'
     else:
         surgery = 'unknown type surgery'
@@ -349,4 +349,3 @@ def prepare_report(args, row, i=0):
     print(text_prompt)
 
     return text_prompt
-
