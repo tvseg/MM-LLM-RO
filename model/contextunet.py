@@ -269,7 +269,8 @@ class ContextUNETR(nn.Module):
         hidden_states_out.append(dec4)
 
         # multimodal alignment
-        hidden_states_out, _, _ = self.interactive_alignment(hidden_states_out, report_in, x_in)
+        if self.context:
+            hidden_states_out, _, _ = self.interactive_alignment(hidden_states_out, report_in, x_in)
 
         # visual decoder
         dec2 = self.decoder4(hidden_states_out[4], hidden_states_out[3])
