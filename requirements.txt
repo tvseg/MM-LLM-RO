@@ -14,5 +14,9 @@ seg-metrics
 sentencepiece
 SimpleITK
 tensorboardX
-torch==2.0.1
-transformers==4.36.2
+torch
+transformers
+accelerate
+peft
+argparse
+openpyxl
